@@ -1,0 +1,2 @@
+# AutoControlBaseOnImage
+根据给予的图片自动执行操作
