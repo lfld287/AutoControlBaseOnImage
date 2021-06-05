@@ -1,10 +1,10 @@
 from typing import List
 import easyocr
-import PIL.Image as Image
+import PIL.Image
 import io
 
 
-def ListWord(img:Image) -> List :
+def ListWord(img:PIL.Image.Image) -> List :
     buf = io.BytesIO()
     img.save(buf, format='JPEG')
     byte_im = buf.getvalue()
