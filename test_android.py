@@ -16,10 +16,13 @@ import tool.cropTool.cropTool as ct
 #     print(i)
 
 img = Image.open("tmp.png")
-ct.tool_crop(img,1600,900)
+# ct.tool_crop(img,1600,900)
+app = ct.CropTool(img,1600,900)
+app.mainloop()
 box = (1528, 1355, 1593, 1381)
 temp = img.crop(box)
 temp.save("temp.png")
+
 # temp.show()
 # print(type(img))
 # print(type(temp))
