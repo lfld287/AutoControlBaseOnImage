@@ -34,19 +34,19 @@ def Tmatch(img, temp) -> tuple:
     # print(max_val)
     # print(max_loc)
     if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-        top_left = min_loc
+        left_top = min_loc
         val = min_val
     else:
-        top_left = max_loc
+        left_top = max_loc
         val = max_val
 
     size = temp_cv2.shape
-    bottom_right = (top_left[0] + size[1], top_left[1] + size[0])
-    # print(top_left)
-    # print(bottom_right)
-    test = cv2.rectangle(img_cv2, top_left, bottom_right, 255, 2)
+    right_bottom = (left_top[0] + size[1], left_top[1] + size[0])
+    print(left_top)
+    print(right_bottom)
+    test = cv2.rectangle(img_cv2, left_top, right_bottom, 255, 2)
     cv2.imwrite("test.png", test)
     
 
-    return top_left+bottom_right,val
+    return left_top+right_bottom,val
 

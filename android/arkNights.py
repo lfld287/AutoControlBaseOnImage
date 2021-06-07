@@ -1,7 +1,21 @@
-from re import X
+import PIL.Image
 import uiautomator2 as u2
 import time
-import ocr.ocr as ocr
+import myImage.ocr as ocr
+import myImage.templateMatching as tm
+import android.screenRotation as sr
+
+# constatns
+
+RESOURCE_PATH = "resource/arkNights"
+
+
+def getCenter(pos: tuple):
+    print(pos)
+    left,top,right,bottom = pos
+    x = left+(right-left)/2
+    y = top+(bottom-top)/2
+    return int(x), int(y)
 
 
 def checkAndStartMRFZ(d: u2.Device):
@@ -17,22 +31,35 @@ def checkAndStartMRFZ(d: u2.Device):
 
 def goToMainMenu(d: u2.Device) -> bool:
     img = d.screenshot()
-    list = ocr.ListWord(img)
-    checkAndPassStartScreen(d, list)
+    if checkIsStartScreen(d, img):
+        checkAndPassStartScreen(d)
     return False
 
 
-def checkAndPassStartScreen(d: u2.Device, list: list):
-    for i in list:
-        print(i[1])
-        print(i[1].find("START"))
-        print(type(i[1]))
-        s = i[1].strip()
-        if s.find("START") != -1:
-            x: int = i[0][0][0]-i[0][1][0]+i[0][0][0]
-            y: int = i[0][2][1]-i[0][1][1]+i[0][2][1]
-            print("clicking!!!!")
-            d.click(x, y)
+def checkIsStartScreen(d: u2.Device, img: PIL.Image.Image) -> bool:
+    temp = PIL.Image.open(RESOURCE_PATH+"/start_menu_start.png")
+    _, val = tm.Tmatch(img, temp)
+    if val < 0.85:
+        print("is not like start screen")
+        return False
+    else:
+        print("is like start screen")
+        return True
+
+
+def checkAndPassStartScreen(d: u2.Device) -> bool:
+    img = d.screenshot()
+    temp = PIL.Image.open(RESOURCE_PATH+"/start_menu_start.png")
+    pos, val = tm.Tmatch(img, temp)
+    print(pos, val)
+    if val < 0.85:
+        return False
+    print("found start,clicking")
+    x, y = getCenter(pos)
+    print(x)
+    print(y)
+    d.click(x, y)
+    return True
 
 
 def testList(d: u2.Device):

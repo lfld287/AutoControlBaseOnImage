@@ -151,4 +151,5 @@ class CropTool(tk.Tk):
             self.img_crop = self.img_original.crop(
                 (self.rectX, self.rectY, self.curX, self.curY))
             self.img_crop.save("crop_image/crop_%d.png" % (int(time.time())))
+            print((self.rectX, self.rectY, self.curX, self.curY))
         pass
