@@ -1,27 +1,38 @@
-import myImage.newThing as nt
-import PIL.Image as Image
+from PIL.Image import blend
+import cv2
 import numpy as np
 
 #打开一张图片
-img = Image.open("tmp.png")
+img = cv2.imread("tmp.png")
+
+img_gray=cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
+
+# cv2.imshow("123",img_gray)
+
+img_blur = cv2.blur(img_gray,ksize=(3,3))
+
+# adaptiveThreshold
+
+img_out=cv2.adaptiveThreshold(img_blur,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,5,5)
+
+sobel_x = cv2.Sobel(img_blur, cv2.CV_64F, dx = 1, dy = 0, ksize = 5)
+sobel_y = cv2.Sobel(img_blur, cv2.CV_64F, dx = 0, dy = 1, ksize = 5)
+blended = cv2.addWeighted(src1=sobel_x, alpha=0.5, src2=sobel_y,
+                          beta=0.5, gamma=0)
+laplacian = cv2.Laplacian(img_blur, cv2.CV_64F)
+
+# cv2.imshow("123",img_out)
+
+k=cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+
+e=cv2.erode(img_gray,k)
+
+#canny edge
+
+img_canny = cv2.Canny(img_blur,100,200)
+
+cv2.xfeatures2d.SURF_create()
+
+cv2.imwrite("img_at.png",img_canny)
 
 
-img = img.convert("L")
-
-img.show()
-#将图片化为32*32的
-# img = img.resize((1920, 32))
-# img.show()
-#二值化
-img = img.point(lambda x: x > 150 and 255)
-img.show()
-img.save("nnnn.png")
-
-# #将图片转换为数组形式，元素为其像素的亮度值
-# img_array = np.asarray(img)
-# print (img_array)
-# #得到网格特征统计图
-# features_array = nt.get_features(img_array)
-# print (features_array)
-# features_vector =features_array.reshape(features_array.shape[0]*features_array.shape[1])
-# print (features_vector)
