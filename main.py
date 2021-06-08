@@ -13,11 +13,6 @@ print(d.info)
 
 # sr.clickRotation1(d,1560,1363)
 
-
-MRFZ.checkAndStartMRFZ(d)
-time.sleep(5)
-while True:
-    if MRFZ.goToMainMenu(d) :
-        break 
-time.sleep(5)
-d.app_stop("com.hypergryph.arknights")
+session = MRFZ.arkNights(d)
+session.checkAndStart()
+session.MainToWarehouse()
