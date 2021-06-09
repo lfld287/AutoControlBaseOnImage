@@ -11,8 +11,7 @@ import time
 
 RESOURCE_PATH = "resource/arkNights"
 
-SCREEN_LIST = {"start": False, "login": False, "event": False,
-               "supply": False, "checkin": False, "main": False}
+SCREEN_LIST = ["start", "login", "event", "supply", "checkin", "main"]
 
 
 def getCenter(pos: tuple):
@@ -46,8 +45,8 @@ class arkNights():
                 feature_img = PIL.Image.open(os.path.join(root, file))
                 _, val = tm.Tmatch(self.ss, feature_img)
                 if val < 0.85:
+                    print(file+" mismatch")
                     return False
-        print(file+" match")
         return True
 
     def actionClick(self, screen: str, element: str, interval: int = 2) -> bool:
@@ -72,12 +71,9 @@ class arkNights():
         return result
 
     def detectCurrentScreen(self) -> str:
-        for key in SCREEN_LIST:
-            if SCREEN_LIST[key] == False:
-                print("detect "+key)
-                if self.checkScreen(key):
-                    SCREEN_LIST[key] = True
-                    return key
+        for scr in SCREEN_LIST:
+            if self.checkScreen(scr):
+                return scr
         return "unknown"
 
     def gotoMainMenu(self):
@@ -85,7 +81,6 @@ class arkNights():
         while True:
             scr = self.detectCurrentScreen()
             if scr == "main":
-                self.actionClick("main", "current")
                 break
             elif scr == "start":
                 self.actionClick("start", "start_button")
@@ -97,21 +92,17 @@ class arkNights():
                 self.actionClick("supply", "confirm_button")
             elif scr == "checkin":
                 self.actionClick("checkin", "close_button")
+            else:
+                print("scr unknown")
             self.updateScreen()
         print("alredy in main screen")
         return
 
-    def goFight(self):
-        while True:
-            self.updateScreen()
-            if self.actionClick("fight", "exterminate"):
-                print("interval exterminate")
-            else:
-                print("goto main_theme")
-
     def MainToWarehouse(self):
         self.gotoMainMenu()
-        self.goFight()
+        self.actionClick("main","warehouse")
+
+    
 
 
 def goToMainMenu(d: u2.Device) -> bool:
