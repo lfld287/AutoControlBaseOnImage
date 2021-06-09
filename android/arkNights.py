@@ -4,12 +4,15 @@ import os
 import myImage.ocr as ocr
 import myImage.templateMatching as tm
 import time
+import threading
 
 # constatns
 
 # 资源文件
 
 RESOURCE_PATH = "resource/arkNights"
+
+MISSION_NAMA = "1-7"
 
 SCREEN_LIST = {"start": False, "login": False, "event": False,
                "supply": False, "checkin": False, "main": False}
@@ -45,10 +48,10 @@ class arkNights():
             for file in files:
                 feature_img = PIL.Image.open(os.path.join(root, file))
                 _, val = tm.Tmatch(self.ss, feature_img)
-                if val < 0.85:
-                    return False
-        print(file+" match")
-        return True
+                if val > 0.85:
+                    print(file+" match")
+                    return True
+        return False
 
     def actionClick(self, screen: str, element: str, interval: int = 2) -> bool:
         g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
@@ -81,78 +84,48 @@ class arkNights():
         return "unknown"
 
     def gotoMainMenu(self):
-        self.updateScreen()
         while True:
+            self.updateScreen()
             scr = self.detectCurrentScreen()
             if scr == "main":
-                self.actionClick("main", "current")
-                break
+                print("alredy in MainMenu")
+                self.gotoTerminal()
             elif scr == "start":
                 self.actionClick("start", "start_button")
             elif scr == "login":
                 self.actionClick("login", "login_button")
             elif scr == "event":
-                self.actionClick("event", "close_button")
+                self.actionClick("event", "event_close")
             elif scr == "supply":
                 self.actionClick("supply", "confirm_button")
             elif scr == "checkin":
                 self.actionClick("checkin", "close_button")
-            self.updateScreen()
-        print("alredy in main screen")
-        return
 
-    def goFight(self):
+    def gotoTerminal(self):
+        if self.actionClick("main", "current"):
+            print("alredy in Terminal")
+            self.gotoFight()
+        SCREEN_LIST["event"] = False
+        SCREEN_LIST["main"] = False
+
+    def gotoFight(self):
+        self.updateScreen()
+        if self.actionClick("fight", "exterminate"):
+            print("interval exterminate")
+        elif self.actionClick("fight", "main_theme"):
+            print("alredy in main_theme")
+            self.gotoAwaken()
+
+    def gotoAwaken(self):
         while True:
             self.updateScreen()
-            if self.actionClick("fight", "exterminate"):
-                print("interval exterminate")
-            else:
-                print("goto main_theme")
+            if self.actionClick("fight", "awaken"):
+                print("alredy in awaken")
+                self.gotoPart("evil_time_part2")
 
-    def MainToWarehouse(self):
-        self.gotoMainMenu()
-        self.goFight()
-
-
-def goToMainMenu(d: u2.Device) -> bool:
-    img = d.screenshot()
-    if checkIsStartScreen(d, img):
-        checkAndPassStartScreen(d)
-    return False
-
-
-def checkIsStartScreen(d: u2.Device, img: PIL.Image.Image) -> bool:
-    temp = PIL.Image.open(RESOURCE_PATH+"/start_menu_start.png")
-    _, val = tm.Tmatch(img, temp)
-    if val < 0.85:
-        print("is not like start screen")
-        return False
-    else:
-        print("is like start screen")
-        return True
-
-
-def checkAndPassStartScreen(d: u2.Device) -> bool:
-    img = d.screenshot()
-    temp = PIL.Image.open(RESOURCE_PATH+"/start_menu_start.png")
-    pos, val = tm.Tmatch(img, temp)
-    print(pos, val)
-    if val < 0.85:
-        return False
-    print("found start,clicking")
-    x, y = getCenter(pos)
-    print(x)
-    print(y)
-    d.click(x, y)
-    return True
-
-
-def testList(d: u2.Device):
-    img = d.screenshot()
-    list = ocr.ListWord(img)
-    for i in list:
-        print(type(i))
-        print(i)
-        print(type(i[0]))
-        print(i[1])
-    img.show()
+    def gotoPart(self, name: str):
+        while True:
+            self.updateScreen()
+            if self.actionClick("fight", name):
+                print("alredy in evil_time_part2")
+                break

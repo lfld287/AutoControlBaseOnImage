@@ -1,1 +1,5 @@
 crop_image/
+android/__pycache__
+myImage/__pycache__
+tool/cropTool/__pycache__
+tool/__pycache__

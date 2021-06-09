@@ -42,10 +42,10 @@ def Tmatch(img, temp) -> tuple:
 
     size = temp_cv2.shape
     right_bottom = (left_top[0] + size[1], left_top[1] + size[0])
-    print(left_top)
-    print(right_bottom)
+    # print(left_top)
+    # print(right_bottom)
     test = cv2.rectangle(img_cv2, left_top, right_bottom, 255, 2)
-    cv2.imwrite("test.png", test)
+    cv2.imwrite("catch.png", test)
     
 
     return left_top+right_bottom,val

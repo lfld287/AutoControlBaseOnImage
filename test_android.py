@@ -11,8 +11,6 @@ print(d.info)
 d.screenshot("tmp.png")
 
 
-
-
 # l = ocr.ListWordFile("tmp.png")
 # for i in l :
 #     print(i)
@@ -28,9 +26,8 @@ img = Image.open("tmp.png")
 # print(res)
 
 
-
 # ct.tool_crop(img,1600,900)
-app = ct.CropTool(img,1600,900)
+app = ct.CropTool(img, 1600, 900)
 app.mainloop()
 
 
