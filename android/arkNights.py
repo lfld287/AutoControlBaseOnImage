@@ -4,7 +4,6 @@ import os
 import myImage.ocr as ocr
 import myImage.templateMatching as tm
 import time
-import threading
 
 # constatns
 
@@ -14,8 +13,7 @@ RESOURCE_PATH = "resource/arkNights"
 
 MISSION_NAMA = "1-7"
 
-SCREEN_LIST = {"start": False, "login": False, "event": False,
-               "supply": False, "checkin": False, "main": False}
+SCREEN_LIST = ["start", "login", "event", "supply", "checkin", "main"]
 
 
 def getCenter(pos: tuple):
@@ -53,7 +51,27 @@ class arkNights():
                     return True
         return False
 
-    def actionClick(self, screen: str, element: str, interval: int = 2) -> bool:
+    def checkFeature(self, screen: str, element: str, interval: int = 1) -> bool:
+        g = os.walk(RESOURCE_PATH+"/"+screen+"/feature")
+        result: bool
+        for root, _, files in g:
+            if element+".png" in files:
+                element_img = PIL.Image.open(
+                    os.path.join(root, element+".png"))
+                _, val = tm.Tmatch(self.ss, element_img)
+                if val < 0.85:
+                    print(element+" not found in screeShot")
+                    result = False
+                else:
+                    print(element+" match")
+                    result = True
+            else:
+                print(element+" not found in action folder")
+                result = False
+        time.sleep(interval)
+        return result
+
+    def actionClick(self, screen: str, element: str, interval: int = 1) -> bool:
         g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
         result: bool
         for root, _, files in g:
@@ -67,6 +85,7 @@ class arkNights():
                 else:
                     x, y = getCenter(pos)
                     self.d.click(x, y)
+                    print("click "+element)
                     result = True
             else:
                 print(element+" not found in action folder")
@@ -75,12 +94,10 @@ class arkNights():
         return result
 
     def detectCurrentScreen(self) -> str:
-        for key in SCREEN_LIST:
-            if SCREEN_LIST[key] == False:
-                print("detect "+key)
-                if self.checkScreen(key):
-                    SCREEN_LIST[key] = True
-                    return key
+        for scr in SCREEN_LIST:
+            print("detect "+scr)
+            if self.checkScreen(scr):
+                return scr
         return "unknown"
 
     def gotoMainMenu(self):
@@ -105,8 +122,6 @@ class arkNights():
         if self.actionClick("main", "current"):
             print("alredy in Terminal")
             self.gotoFight()
-        SCREEN_LIST["event"] = False
-        SCREEN_LIST["main"] = False
 
     def gotoFight(self):
         self.updateScreen()
@@ -114,18 +129,45 @@ class arkNights():
             print("interval exterminate")
         elif self.actionClick("fight", "main_theme"):
             print("alredy in main_theme")
-            self.gotoAwaken()
+            # 觉醒 0-3章
+            self.gotoHourAwakening()
+            # 幻灭 4-8章
+            # self.gotoShatterVision
 
-    def gotoAwaken(self):
+    def gotoHourAwakening(self):
         while True:
             self.updateScreen()
             if self.actionClick("fight", "awaken"):
                 print("alredy in awaken")
-                self.gotoPart("evil_time_part2")
+                self.gotoEpisode("evil_time_part2")
 
-    def gotoPart(self, name: str):
+    def gotoEpisode(self, episodeName: str):
         while True:
             self.updateScreen()
-            if self.actionClick("fight", name):
-                print("alredy in evil_time_part2")
+            if self.actionClick("fight", episodeName):
+                print("alredy in "+episodeName)
+                self.gotoMission("1-7")
                 break
+
+    def gotoMission(self, missionName: str):
+        try:
+            x = self.ss.size[0]
+            y = self.ss.size[1]
+            self.d.drag(0, y/2, x, y/2)
+            time.sleep(1)
+            self.d.drag(0, y/2, x, y/2)
+            while True:
+                self.updateScreen()
+                if self.actionClick("fight", missionName) == False:
+                    self.d.drag(x/3*2, y/2, x/3, y/2)
+                    time.sleep(1)
+                else:
+                    self.startMission()
+                    break
+        except:
+            print("drag error")
+
+    def startMission(self):
+        self.updateScreen()
+        self.actionClick("fight", "no_agent")
+        self.actionClick("fight", "start_mission")

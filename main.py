@@ -8,8 +8,6 @@ import time
 d = u2.connect()
 print(d.app_current())
 print(d.info)
-
 session = MRFZ.arkNights(d)
 session.checkAndStart()
 session.gotoMainMenu()
-
