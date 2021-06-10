@@ -125,9 +125,9 @@ class arkNights():
 
     def gotoFight(self):
         self.updateScreen()
-        if self.actionClick("fight", "exterminate"):
+        if self.actionClick("terminal", "exterminate"):
             print("interval exterminate")
-        elif self.actionClick("fight", "main_theme"):
+        elif self.actionClick("terminal", "main_theme"):
             print("alredy in main_theme")
             # 觉醒 0-3章
             self.gotoHourAwakening()
@@ -137,14 +137,14 @@ class arkNights():
     def gotoHourAwakening(self):
         while True:
             self.updateScreen()
-            if self.actionClick("fight", "awaken"):
+            if self.actionClick("mainTheme", "awaken"):
                 print("alredy in awaken")
                 self.gotoEpisode("evil_time_part2")
 
     def gotoEpisode(self, episodeName: str):
         while True:
             self.updateScreen()
-            if self.actionClick("fight", episodeName):
+            if self.actionClick("mainTheme", episodeName):
                 print("alredy in "+episodeName)
                 self.gotoMission("1-7")
                 break
@@ -158,7 +158,7 @@ class arkNights():
             self.d.drag(0, y/2, x, y/2)
             while True:
                 self.updateScreen()
-                if self.actionClick("fight", missionName) == False:
+                if self.actionClick("mission", missionName) == False:
                     self.d.drag(x/3*2, y/2, x/3, y/2)
                     time.sleep(1)
                 else:

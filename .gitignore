@@ -5,3 +5,5 @@ tool/cropTool/__pycache__
 tool/__pycache__
 tmp.png
 catch.png
+sift_test.png
+match_test.png
