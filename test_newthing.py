@@ -8,7 +8,7 @@ img = cv2.imread("tmp.png")
 temp = cv2.imread("resource/arkNights/main/feature/offer.png")
 
 
-myImage.sift.drawMatchRect(img,temp)
+myImage.sift.Smatch(img,temp)
 
 # img_gray=cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
 

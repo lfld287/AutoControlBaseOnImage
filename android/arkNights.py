@@ -1,3 +1,4 @@
+import myImage.sift as sift
 import PIL.Image
 import uiautomator2 as u2
 import os
@@ -23,9 +24,16 @@ def getCenter(pos: tuple):
 
 
 class arkNights():
-    def __init__(self, device: u2.Device) -> None:
+    def __init__(self, device: u2.Device, useSift: bool) -> None:
         self.d = device
         self.ss = None
+        self.sift = useSift
+
+    def Match(self):
+        if self.sift:
+            return tm.Tmatch
+        else:
+            return sift.Smatch
 
     def updateScreen(self):
         self.ss = self.d.screenshot()
@@ -43,8 +51,8 @@ class arkNights():
         for root, _, files in g:
             for file in files:
                 feature_img = PIL.Image.open(os.path.join(root, file))
-                _, val = tm.Tmatch(self.ss, feature_img)
-                if val < 0.85:
+                _, reliable = self.Match(self.ss, feature_img)
+                if not reliable:
                     print(file+" mismatch")
                     return False
         return True
@@ -56,8 +64,8 @@ class arkNights():
             if element+".png" in files:
                 element_img = PIL.Image.open(
                     os.path.join(root, element+".png"))
-                pos, val = tm.Tmatch(self.ss, element_img)
-                if val < 0.85:
+                pos, reliable = self.Match(self.ss, element_img)
+                if not reliable:
                     print(element+" not found in screeShot")
                     result = False
                 else:
@@ -100,6 +108,4 @@ class arkNights():
 
     def MainToWarehouse(self):
         self.gotoMainMenu()
-        self.actionClick("main","warehouse")
-
-    
+        self.actionClick("main", "warehouse")

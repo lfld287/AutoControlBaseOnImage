@@ -5,7 +5,6 @@ from numpy.core.fromnumeric import size
 import myImage.convert
 
 
-
 def Tmatch(img, temp) -> tuple:
     img_cv2: numpy.ndarray
     temp_cv2: numpy.ndarray
@@ -46,7 +45,12 @@ def Tmatch(img, temp) -> tuple:
     print(right_bottom)
     test = cv2.rectangle(img_cv2, left_top, right_bottom, 255, 2)
     cv2.imwrite("test.png", test)
-    
 
-    return left_top+right_bottom,val
+    reliable: bool = False
 
+    if val < 0.85:
+        reliable = False
+    else:
+        reliable = True
+
+    return left_top+right_bottom, reliable
