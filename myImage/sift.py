@@ -125,8 +125,8 @@ def Smatch(img: any, temp: any) -> tuple:
         #     img_copy, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), 2)
         i += 1
 
-    rect,density = getMaxDensityRect(pList, 4, 4)
-    # print(rect)
+    rect, density = getMaxDensityRect(pList, 4, 4)
+    print("density",density)
     # left, top, right, bottom = rect
     #area = (right-left)*(bottom - top)
     # print(area)
@@ -134,14 +134,14 @@ def Smatch(img: any, temp: any) -> tuple:
     #                          (right, bottom), (255, 0, 0), 2)
     #cv2.imwrite("rect.png", img_copy)
 
-    reliable:bool = False
+    reliable: bool = False
 
-    if density<0.03:
+    if density < 0.08:
         reliable = False
     else:
         reliable = True
 
-    return rect,reliable
+    return rect, reliable
 
 
 def pointInRect(pt, rect) -> bool:
@@ -154,7 +154,7 @@ def pointInRect(pt, rect) -> bool:
         return False
 
 
-def getMaxDensityRect(pList: list, rectMinHeight, rectMinWidth) :
+def getMaxDensityRect(pList: list, rectMinHeight, rectMinWidth):
 
     #   先用最弱智的方法实现，后面看看能不能优化
 
@@ -191,4 +191,4 @@ def getMaxDensityRect(pList: list, rectMinHeight, rectMinWidth) :
     print(maxDensity)
     print(rect)
 
-    return tuple(rect),maxDensity
+    return tuple(rect), maxDensity
