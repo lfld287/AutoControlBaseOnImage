@@ -2,13 +2,28 @@ from PIL.Image import blend
 import cv2
 import numpy as np
 import myImage.sift
+import uiautomator2 as u2
+
+# d = u2.connect()
+# print(d.app_current())
+# print(d.info)
+# d.screenshot("tmp.png")
 
 #打开一张图片
 img = cv2.imread("tmp.png")
-temp = cv2.imread("resource/arkNights/main/feature/offer.png")
+temp = cv2.imread("resource/arkNights/login/feature/login_button.png")
 
 
-myImage.sift.Smatch(img,temp)
+rect,reliable = myImage.sift.Smatch(img,temp)
+
+l,t,r,b = rect
+
+if not reliable:
+    print("not reliable")
+
+img = cv2.rectangle(img,(l,t),(r,b),(255,0,0),5)
+
+cv2.imwrite("new_res.png",img)
 
 # img_gray=cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
 
