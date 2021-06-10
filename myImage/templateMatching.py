@@ -16,7 +16,7 @@ def Tmatch(img, temp) -> tuple:
         img_cv2 = img
     else:
         raise RuntimeError(
-            'Tmatch wrong input img , expect numpy.ndarry or PIL.Image.Image, get '+type(temp).__name__)
+            'Tmatch wrong input img , expect numpy.ndarry or PIL.Image.Image, get '+type(img).__name__)
 
     if isinstance(temp, PIL.Image.Image):
         temp_cv2 = myImage.convert.PilImageToCvImage(temp)
