@@ -31,11 +31,11 @@ class arkNights():
         self.ss = None
         self.sift = useSift
 
-    def Match(self):
+    def Match(self,img,temp):
         if self.sift:
-            return tm.Tmatch
+            return tm.Tmatch(img,temp)
         else:
-            return sift.Smatch
+            return sift.Smatch(img,temp)
 
     def updateScreen(self):
         self.ss = self.d.screenshot()
