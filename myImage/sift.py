@@ -136,7 +136,7 @@ def Smatch(img: any, temp: any) -> tuple:
 
     reliable: bool = False
 
-    if density < 0.08:
+    if density < 0.04:
         reliable = False
     else:
         reliable = True
