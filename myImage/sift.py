@@ -125,7 +125,7 @@ def Smatch(img: any, temp: any) -> tuple:
         #     img_copy, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), 2)
         i += 1
 
-    rect, density = getMaxDensityRect(pList, 10, 10)
+    rect, density = getMaxDensityRect(pList, 5, 5)
     print("density",density)
     left, top, right, bottom = rect
     # area = (right-left)*(bottom - top)
@@ -141,7 +141,7 @@ def Smatch(img: any, temp: any) -> tuple:
     else:
         reliable = True
 
-    img_rect = cv2.rectangle(img,(left,top),(right,bottom),(255,0,0),5)
+    img_rect = cv2.rectangle(img_cv2,(left,top),(right,bottom),(255,0,0),5)
     cv2.imwrite("sift_rect_res.png",img_rect)
 
     return rect, reliable
