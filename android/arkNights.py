@@ -49,7 +49,7 @@ class arkNights():
                              "com.u8.sdk.U8UnityContext")
 
     def checkScreen(self, screen: str) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/feature")
+        g = os.walk(RESOURCE_PATH+"/"+screen)
         for root, _, files in g:
             for file in files:
                 feature_img = PIL.Image.open(os.path.join(root, file))
@@ -60,7 +60,7 @@ class arkNights():
         return True
 
     def actionClick(self, screen: str, element: str, interval: int = 1) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
+        g = os.walk(RESOURCE_PATH+"/"+screen)
         result: bool
         for root, _, files in g:
             if element+".png" in files:
