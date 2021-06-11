@@ -118,7 +118,7 @@ def Smatch(img: any, temp: any) -> tuple:
     i: int = 1
     pList: list = []
 
-    for match in matches:
+    for match in matches[:50]:
         pt = kp[match.trainIdx].pt
         # print(pt)
         pList.append([pt[0], pt[1]])
@@ -137,7 +137,7 @@ def Smatch(img: any, temp: any) -> tuple:
 
     reliable: bool = False
 
-    if density < 0.03:
+    if density < 0.018:
         reliable = False
     else:
         reliable = True
