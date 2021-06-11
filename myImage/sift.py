@@ -2,6 +2,7 @@ import numpy
 import cv2
 import PIL.Image
 import myImage.convert
+import itertools
 
 mySift: any = None
 
@@ -125,8 +126,8 @@ def Smatch(img: any, temp: any) -> tuple:
         #     img_copy, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), 2)
         i += 1
 
-    rect, density = getMaxDensityRect(pList, 5, 5)
-    print("density",density)
+    rect, density = getMaxDensityRect(pList, 35, 35)
+    print("density", density)
     left, top, right, bottom = rect
     # area = (right-left)*(bottom - top)
     # print(area)
@@ -136,13 +137,14 @@ def Smatch(img: any, temp: any) -> tuple:
 
     reliable: bool = False
 
-    if density < 0.04:
+    if density < 0.03:
         reliable = False
     else:
         reliable = True
 
-    img_rect = cv2.rectangle(img_cv2,(left,top),(right,bottom),(255,0,0),5)
-    cv2.imwrite("sift_rect_res.png",img_rect)
+    img_rect = cv2.rectangle(img_cv2, (left, top),
+                             (right, bottom), (255, 0, 0), 5)
+    cv2.imwrite("sift_rect_res.png", img_rect)
 
     return rect, reliable
 
@@ -157,6 +159,58 @@ def pointInRect(pt, rect) -> bool:
         return False
 
 
+def caculatePointCountInRect(pList: list, rect) -> int:
+    count = 0
+    for pt in pList:
+        if pointInRect(pt, rect):
+            count += 1
+    return count
+
+
+def caculateDenisty(pList: list, rect) -> float:
+    # 比较的应该是单位范围内的特征点比例
+    count = caculatePointCountInRect(pList, rect)
+    left, top, right, bottom = rect
+    area = (right - left)*(bottom - top)
+    density = count/len(pList)*100/area
+    return density
+
+
+def generateRectByFourPoint(pList: tuple, rectMinWidth: int, rectMinHeight: int) -> tuple:
+    minX: int = pList[0][0]
+    minY: int = pList[0][1]
+    maxX: int = pList[0][0]
+    maxY: int = pList[0][1]
+    for pt in pList:
+        if pt[0] < minX:
+            minX = pt[0]
+        if pt[0] > maxX:
+            maxX = pt[0]
+        if pt[1] < minY:
+            minY = pt[1]
+        if pt[1] > maxY:
+            maxY = pt[1]
+    if maxX == minX or maxY == minY:
+        return None
+    # 如果太小 进行扩张到最小矩形 ，中心扩张
+    left = minX
+    right = maxX
+    top = minY
+    bottom = maxY
+    wGap = rectMinWidth - right + left
+    hGap = rectMinHeight - bottom + top
+    if wGap > 0:
+        left = left - wGap
+    if hGap > 0:
+        top = top - hGap
+    if left < 0:
+        left = 0
+    if top < 0:
+        top = 0
+    return(left, top, right, bottom)
+
+
+# 没有好办法，只能取四个点构成矩形，然后一个个遍历了。
 def getMaxDensityRect(pList: list, rectMinHeight, rectMinWidth):
 
     #   先用最弱智的方法实现，后面看看能不能优化
@@ -167,31 +221,20 @@ def getMaxDensityRect(pList: list, rectMinHeight, rectMinWidth):
         pt[1] = int(pt[1])
 
     maxDensity: float = 0
-    rect: list[int] = [0, 0, 0, 0]
+    maxCount: int = 0
+    maxRect: list[int] = [0, 0, 0, 0]
 
-    for pt1 in pList:
-        for pt2 in pList:
-            # 如果x坐标或者y坐标相同就无法组成矩形
-            # 有重复，要保证一号电在二号点左上方
-            if pt2[0]-pt1[0] >= rectMinWidth and pt2[1]-pt1[1] >= rectMinHeight:
-                # 计算矩形里面有几个点
-                top = pt1[1]
-                left = pt1[0]
-                right = pt2[0]
-                bottom = pt2[1]
-                pointInclude = 0
-                area = (right - left)*(bottom - top)
-                for pt3 in pList:
-                    if pointInRect(pt3, [left, top, right, bottom]):
-                        pointInclude += 1
-                density = float(pointInclude)/float(area)
-                # print(area,pointInclude,density)
-                if density > maxDensity:
-                    print(density)
-                    maxDensity = density
-                    rect = [left, top, right, bottom]
+    for combo in itertools.combinations(pList, 4):
+        rect = generateRectByFourPoint(
+            combo, rectMinWidth, rectMinHeight)
+        if rect == None:
+            continue
+        density = caculateDenisty(pList, rect)
+        if density > maxDensity:
+            maxDensity = density
+            maxRect = list(rect)
 
     print(maxDensity)
-    print(rect)
+    print(maxRect)
 
-    return tuple(rect), maxDensity
+    return tuple(maxRect), maxDensity
