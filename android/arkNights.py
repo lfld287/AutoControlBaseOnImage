@@ -1,3 +1,4 @@
+import myImage.sift as sift
 import PIL.Image
 import uiautomator2 as u2
 import os
@@ -13,7 +14,7 @@ RESOURCE_PATH = "resource/arkNights"
 
 MISSION_NAMA = "1-7"
 
-SCREEN_LIST = ["start", "login", "event", "supply", "checkin", "main"]
+SCREEN_LIST = ["start", "login", "event", "supply", "checkin", "main", "fight"]
 
 
 def getCenter(pos: tuple):
@@ -25,9 +26,16 @@ def getCenter(pos: tuple):
 
 
 class arkNights():
-    def __init__(self, device: u2.Device) -> None:
+    def __init__(self, device: u2.Device, useSift: bool) -> None:
         self.d = device
         self.ss = None
+        self.sift = useSift
+
+    def Match(self, img, temp):
+        if self.sift:
+            return sift.Smatch(img, temp)
+        else:
+            return tm.Tmatch(img, temp)
 
     def updateScreen(self):
         self.ss = self.d.screenshot()
@@ -41,45 +49,25 @@ class arkNights():
                              "com.u8.sdk.U8UnityContext")
 
     def checkScreen(self, screen: str) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/feature")
+        g = os.walk(RESOURCE_PATH+"/"+screen)
         for root, _, files in g:
             for file in files:
                 feature_img = PIL.Image.open(os.path.join(root, file))
-                _, val = tm.Tmatch(self.ss, feature_img)
-                if val > 0.85:
-                    print(file+" match")
-                    return True
-        return False
-
-    def checkFeature(self, screen: str, element: str, interval: int = 1) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/feature")
-        result: bool
-        for root, _, files in g:
-            if element+".png" in files:
-                element_img = PIL.Image.open(
-                    os.path.join(root, element+".png"))
-                _, val = tm.Tmatch(self.ss, element_img)
-                if val < 0.85:
-                    print(element+" not found in screeShot")
-                    result = False
-                else:
-                    print(element+" match")
-                    result = True
-            else:
-                print(element+" not found in action folder")
-                result = False
-        time.sleep(interval)
-        return result
+                _, reliable = self.Match(self.ss, feature_img)
+                if not reliable:
+                    print(file+" mismatch")
+                    return False
+        return True
 
     def actionClick(self, screen: str, element: str, interval: int = 1) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
+        g = os.walk(RESOURCE_PATH+"/"+screen)
         result: bool
         for root, _, files in g:
             if element+".png" in files:
                 element_img = PIL.Image.open(
                     os.path.join(root, element+".png"))
-                pos, val = tm.Tmatch(self.ss, element_img)
-                if val < 0.85:
+                pos, reliable = self.Match(self.ss, element_img)
+                if not reliable:
                     print(element+" not found in screeShot")
                     result = False
                 else:
@@ -106,7 +94,7 @@ class arkNights():
             scr = self.detectCurrentScreen()
             if scr == "main":
                 print("alredy in MainMenu")
-                self.gotoTerminal()
+                break
             elif scr == "start":
                 self.actionClick("start", "start_button")
             elif scr == "login":
@@ -117,8 +105,15 @@ class arkNights():
                 self.actionClick("supply", "confirm_button")
             elif scr == "checkin":
                 self.actionClick("checkin", "close_button")
+            else:
+                print("unknown parse!!!!!!!!!!!!!!!!!!!!")
+
+    # def MainToWarehouse(self):
+    #     self.gotoMainMenu()
+    #     self.actionClick("main", "warehouse")
 
     def gotoTerminal(self):
+        self.gotoMainMenu()
         if self.actionClick("main", "current"):
             print("alredy in Terminal")
             self.gotoFight()
