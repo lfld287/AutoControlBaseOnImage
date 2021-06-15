@@ -12,9 +12,12 @@ import time
 
 RESOURCE_PATH = "resource/arkNights"
 
+GLOBAL_INTERVAL = 1
+
 MISSION_NAMA = "1-7"
 
-SCREEN_LIST = ["start", "login", "event", "supply", "checkin", "main", "fight"]
+SCREEN_LIST = ["start", "login", "event", "supply",
+               "checkin", "main", "DragonBoatFestival"]
 
 
 def getCenter(pos: tuple):
@@ -30,6 +33,13 @@ class arkNights():
         self.d = device
         self.ss = None
         self.sift = useSift
+        self.screenList = []
+        g = os.listdir(RESOURCE_PATH)
+        for f in g:
+            m = os.path.join(RESOURCE_PATH, f)
+            if(os.path.isdir(m)):
+                self.screenList.append(f)
+        print(self.screenList)
 
     def Match(self, img, temp):
         if self.sift:
@@ -38,7 +48,11 @@ class arkNights():
             return tm.Tmatch(img, temp)
 
     def updateScreen(self):
-        self.ss = self.d.screenshot()
+        while True:
+            self.ss = self.d.screenshot()
+            if self.ss != None:
+                break
+            time.sleep(1)
 
     def checkAndStart(self):
         """
@@ -48,8 +62,13 @@ class arkNights():
             self.d.app_start("com.hypergryph.arknights",
                              "com.u8.sdk.U8UnityContext")
 
-    def checkScreen(self, screen: str) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen)
+    # TODO 一个界面特征有多种可能，
+    def checkScreen(self, screen: str, shouldUpdate: bool = True) -> bool:
+        if shouldUpdate:
+            self.updateScreen()
+        if not os.path.exists(RESOURCE_PATH+"/"+screen+"/feature"):
+            return False
+        g = os.walk(RESOURCE_PATH+"/"+screen+"/feature")
         for root, _, files in g:
             for file in files:
                 feature_img = PIL.Image.open(os.path.join(root, file))
@@ -57,10 +76,36 @@ class arkNights():
                 if not reliable:
                     print(file+" mismatch")
                     return False
-        return True
+                else:
+                    return True
+        return False
 
-    def actionClick(self, screen: str, element: str, interval: int = 1) -> bool:
-        g = os.walk(RESOURCE_PATH+"/"+screen)
+    def actionFound(self, screen: str, element: str, interval: int = 1, shouldUpdate: bool = True) -> bool:
+        if shouldUpdate:
+            self.updateScreen()
+        g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
+        result: bool
+        for root, _, files in g:
+            if element+".png" in files:
+                element_img = PIL.Image.open(
+                    os.path.join(root, element+".png"))
+                _, reliable = self.Match(self.ss, element_img)
+                if not reliable:
+                    print(element+" not found in screeShot")
+                    result = False
+                else:
+                    print(element+" found")
+                    result = True
+            else:
+                print(element+" not found in action folder")
+                result = False
+        time.sleep(interval)
+        return result
+
+    def actionClick(self, screen: str, element: str, interval: int = 1, shouldUpdate: bool = True) -> bool:
+        if shouldUpdate:
+            self.updateScreen()
+        g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
         result: bool
         for root, _, files in g:
             if element+".png" in files:
@@ -81,16 +126,30 @@ class arkNights():
         time.sleep(interval)
         return result
 
+    def actionSwipe(self, fxp, fyp, txp, typ):
+        width, height = self.d.window_size()
+        fx = fxp*width
+        fy = fyp*height
+        tx = txp*width
+        ty = typ*height
+        self.d.swipe(fx, fy, tx, ty)
+
     def detectCurrentScreen(self) -> str:
-        for scr in SCREEN_LIST:
+        self.updateScreen()
+        for scr in self.screenList:
             print("detect "+scr)
-            if self.checkScreen(scr):
+            if self.checkScreen(scr, shouldUpdate=False):
                 return scr
         return "unknown"
 
     def gotoMainMenu(self):
+        if self.checkScreen("main"):
+            return
         while True:
-            self.updateScreen()
+            if self.actionClick("main", "home"):
+                time.sleep(0.5)
+                if self.actionClick("main", "mainpage"):
+                    break
             scr = self.detectCurrentScreen()
             if scr == "main":
                 print("alredy in MainMenu")
@@ -105,65 +164,102 @@ class arkNights():
                 self.actionClick("supply", "confirm_button")
             elif scr == "checkin":
                 self.actionClick("checkin", "close_button")
-            else:
-                print("unknown parse!!!!!!!!!!!!!!!!!!!!")
+            elif scr == "DragonBoatFestival":
+                if not self.actionClick("DragonBoatFestival", "checkIn_button"):
+                    self.actionClick("DragonBoatFestival", "close_button")
 
-    # def MainToWarehouse(self):
-    #     self.gotoMainMenu()
-    #     self.actionClick("main", "warehouse")
+            else:
+                print("unknown screen")
+
+    def takeMaterial(self) -> bool:
+        if not self.checkScreen("material_get"):
+            return False
+        return self.actionClick("material_get", "confirm_button")
+
+    def startFight(self) -> bool:
+        errorCount = 0
+        while True:
+            if errorCount >= 5:
+                return False
+            self.updateScreen()
+            if self.actionFound("fight", "start_operation", shouldUpdate=False):
+                if self.actionFound("fight", "agent_check", shouldUpdate=False):
+                    self.actionClick(
+                        "fight", "start_operation", shouldUpdate=False)
+                    continue
+                else:
+                    self.actionClick("fight", "agent_uncheck",
+                                     shouldUpdate=False)
+                    continue
+            elif self.actionFound("fight","start_final",shouldUpdate=False):
+                self.actionClick("fight","start_final",shouldUpdate=False)
+                continue
+            elif self.actionFound("fight","takeover",shouldUpdate=False):
+                print("fighting .... ")
+                time.sleep(5)
+            elif self.actionFound("fight","over",shouldUpdate=False):
+                print("fight over ,return")
+                self.actionClick("fight","over",shouldUpdate=False)
+                return True 
+            else:
+                errorCount+=1
+
+
+    def gotoMission(self):
+        while not self.checkScreen("mission"):
+            self.gotoMainMenu()
+            time.sleep(GLOBAL_INTERVAL)
+            self.actionClick("main", "mission")
+            time.sleep(GLOBAL_INTERVAL)
+            self.updateScreen()
+
+    def clearMission(self):
+        '''
+        点完任务,每日，每周
+        好像没得做 不懂 再说
+        '''
+        # 起点都是主菜单
+        self.gotoMission()
+        self.actionClick("mission", "daily_mission_uncheck")
+        while True:
+            if self.actionFound("mission", "daily_mission_check"):
+                if not self.actionClick("mission", "take_button"):
+                    break
+            else:
+                self.takeMaterial()
+
+        return
 
     def gotoTerminal(self):
-        self.gotoMainMenu()
-        if self.actionClick("main", "current"):
-            print("alredy in Terminal")
-            self.gotoFight()
-
-    def gotoFight(self):
-        self.updateScreen()
-        # if self.actionClick("fight", "exterminate"):
-        #     print("interval exterminate")
-        # elif 
-        self.actionClick("fight", "main_theme")
-        print("alredy in main_theme")
-            # 觉醒 0-3章
-        self.gotoHourAwakening()
-            # 幻灭 4-8章
-            # self.gotoShatterVision
-
-    def gotoHourAwakening(self):
-        while True:
+        while not self.checkScreen("terminal"):
+            self.gotoMainMenu()
+            time.sleep(GLOBAL_INTERVAL)
+            self.actionClick("main", "terminal")
+            time.sleep(GLOBAL_INTERVAL)
             self.updateScreen()
-            if self.actionClick("fight", "awaken"):
-                print("alredy in awaken")
-                self.gotoEpisode("evil_time_part2")
+        return
 
-    def gotoEpisode(self, episodeName: str):
-        while True:
-            self.updateScreen()
-            if self.actionClick("fight", episodeName):
-                print("alredy in "+episodeName)
-                self.gotoMission("1-7")
-                break
+    def gotoEpisode1(self):
+        while not self.checkScreen("episode1"):
+            self.gotoTerminal()
+            while not self.actionFound("terminal", "main_theme_check"):
+                self.actionClick("terminal", "main_theme_uncheck")
+            while not self.actionFound("terminal", "awaken_check"):
+                self.actionClick("terminal", "awaken_uncheck")
+            self.actionClick("terminal", "evil_time_2")
+        return
 
-    def gotoMission(self, missionName: str):
-        try:
-            x = self.ss.size[0]
-            y = self.ss.size[1]
-            self.d.drag(0, y/2, x, y/2)
-            time.sleep(1)
-            self.d.drag(0, y/2, x, y/2)
-            while True:
-                self.updateScreen()
-                if self.actionClick("fight", missionName) == False:
-                    self.d.drag(x/3*2, y/2, x/3, y/2)
-                    time.sleep(1)
-                else:
-                    self.startMission()
-                    break
-        except:
-            print("drag error")
+    def gotoFight_1_7(self) -> bool:
+        self.gotoEpisode1()
 
-    def startMission(self):
-        self.updateScreen()
-        self.actionClick("fight", "no_agent")
-        self.actionClick("fight", "start_mission")
+        # 滑动搜索1-7
+        if not self.actionClick("episode1", "1-7"):
+            self.d.swipe_ext("right")
+            self.d.swipe_ext("right")
+            self.d.swipe_ext("right")
+        while not self.actionClick("episode1", "1-7"):
+            self.actionSwipe(0.6, 0.5, 0.4, 0.5)
+            time.sleep(1.5)
+
+        if not self.startFight():
+            print("gotoFight_1_7 failed ...")
