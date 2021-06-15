@@ -26,7 +26,7 @@ img = Image.open("tmp.png")
 # print(res)
 
 
-# ct.tool_crop(img,1600,900)
+
 app = ct.CropTool(img, 1600, 900)
 app.mainloop()
 
@@ -34,3 +34,4 @@ app.mainloop()
 # temp.show()
 # print(type(img))
 # print(type(temp))
+    

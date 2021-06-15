@@ -4,14 +4,14 @@ import numpy as np
 import myImage.sift
 import uiautomator2 as u2
 
-# d = u2.connect()
-# print(d.app_current())
-# print(d.info)
-# d.screenshot("tmp.png")
+d = u2.connect()
+print(d.app_current())
+print(d.info)
+d.screenshot("tmp.png")
 
 #打开一张图片
 img = cv2.imread("tmp.png")
-temp = cv2.imread("resource/arkNights/login/feature/login_button.png")
+temp = cv2.imread("resource/arkNights/terminal/action/evil_time_2.png")
 
 
 rect,reliable = myImage.sift.Smatch(img,temp)
