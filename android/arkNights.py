@@ -120,12 +120,13 @@ class arkNights():
 
     def gotoFight(self):
         self.updateScreen()
-        if self.actionClick("fight", "exterminate"):
-            print("interval exterminate")
-        elif self.actionClick("fight", "main_theme"):
-            print("alredy in main_theme")
+        # if self.actionClick("fight", "exterminate"):
+        #     print("interval exterminate")
+        # elif 
+        self.actionClick("fight", "main_theme")
+        print("alredy in main_theme")
             # 觉醒 0-3章
-            self.gotoHourAwakening()
+        self.gotoHourAwakening()
             # 幻灭 4-8章
             # self.gotoShatterVision
 
