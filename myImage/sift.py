@@ -1,5 +1,7 @@
 '''
 对于一些ui界面来说，部分元素是纯色块+文字，这种元素不适合使用特征点来进行匹配,可能适合使用ocr，但是ocr涉及到神经网络
+截图千万不要使用有相同元素的部分
+能用图画就不要用文字，文字很容易有相同部分
 '''
 import numpy
 import cv2
@@ -153,7 +155,7 @@ def Smatch(img: any, temp: any) -> tuple:
 
     reliable: bool = False
 
-    if val < 0.65:
+    if val < 0.8:
         reliable = False
     else:
         reliable = True
@@ -315,7 +317,7 @@ def getMatchRect(pListTarget: list, pListTemplate: list):
                 maxCount = count
                 resLeft = left
                 resTop = top
-                if count/pointCount >= 0.85:
+                if count/pointCount >= 0.95:
                     break
 
     return (int(resLeft), int(resTop), int(resLeft+TrWidth), int(resTop+TrHeight)), maxCount/pointCount
