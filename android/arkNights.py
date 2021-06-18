@@ -159,7 +159,7 @@ class arkNights():
             elif scr == "login":
                 self.actionClick("login", "login_button")
             elif scr == "event":
-                self.actionClick("event", "event_close")
+                self.actionClick("event", "close_button")
             elif scr == "supply":
                 self.actionClick("supply", "confirm_button")
             elif scr == "checkin":
