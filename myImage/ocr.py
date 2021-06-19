@@ -2,17 +2,28 @@ from typing import List
 import easyocr
 import PIL.Image
 import io
+import myImage.convert
+import numpy
+
+myReader: any = None
 
 
-def ListWord(img:PIL.Image.Image) -> List :
-    buf = io.BytesIO()
-    img.save(buf, format='JPEG')
-    byte_im = buf.getvalue()
-    reader = easyocr.Reader(['ch_sim','en']) # need to run only once to load model into memory
-    result = reader.readtext(byte_im)
-    return result
+def initReader():
+    global myReader
+    if myReader is None:
+        myReader = easyocr.Reader(['en'],gpu=False)
 
-def ListWordFile(filePath:str) -> list :
-    reader = easyocr.Reader(['ch_sim','en']) # need to run only once to load model into memory
-    result = reader.readtext(filePath)
+
+def ListWord(img: any) -> List:
+    img_cv2: numpy.ndarray
+    if isinstance(img, PIL.Image.Image):
+        img_cv2 = myImage.convert.PilImageToCvImage(img)
+    elif isinstance(img, numpy.ndarray):
+        img_cv2 = img
+    else:
+        raise RuntimeError(
+            'Tmatch wrong input img , expect numpy.ndarry or PIL.Image.Image, get '+type(img).__name__)
+    initReader()
+    global myReader
+    result = myReader.readtext(img_cv2,detail=0)
     return result

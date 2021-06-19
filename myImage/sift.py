@@ -136,22 +136,16 @@ def Smatch(img: any, temp: any) -> tuple:
     for match in matches[:50]:
         pTarget = kp_img[match.trainIdx].pt
         pTemplate = kp_temp[match.queryIdx].pt
-        # print(pt)
         pListTarget.append([pTarget[0], pTarget[1]])
         pListTemplate.append([pTemplate[0], pTemplate[1]])
-        # img_copy = cv2.circle(
-        #     img_copy, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), 2)
+
         i += 1
 
     # rect, density = getMaxDensityRect(pListTarget, 35, 35)
     rect, val = getMatchRect(pListTarget, pListTemplate)
     print("val", val)
     left, top, right, bottom = rect
-    # area = (right-left)*(bottom - top)
-    # print(area)
-    # img_copy = cv2.rectangle(img_copy, (left, top),
-    #                          (right, bottom), (255, 0, 0), 2)
-    #cv2.imwrite("rect.png", img_copy)
+
 
     reliable: bool = False
 
@@ -160,7 +154,7 @@ def Smatch(img: any, temp: any) -> tuple:
     else:
         reliable = True
 
-    img_rect = cv2.rectangle(img_cv2, (left, top),
+    img_rect = cv2.rectangle(img_cv2.copy(), (left, top),
                              (right, bottom), (255, 0, 0), 5)
     cv2.imwrite("sift_rect_res.png", img_rect)
 

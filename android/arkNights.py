@@ -5,6 +5,7 @@ import os
 import myImage.ocr as ocr
 import myImage.templateMatching as tm
 import time
+import myImage.convert as convert
 
 # constatns
 
@@ -13,11 +14,6 @@ import time
 RESOURCE_PATH = "resource/arkNights"
 
 GLOBAL_INTERVAL = 1
-
-MISSION_NAMA = "1-7"
-
-SCREEN_LIST = ["start", "login", "event", "supply",
-               "checkin", "main", "DragonBoatFestival"]
 
 
 def getCenter(pos: tuple):
@@ -33,16 +29,17 @@ class arkNights():
         self.d = device
         self.ss = None
         self.sift = useSift
+        self.resourcePath = "resource/arkNights"
         self.screenList = []
-        g = os.listdir(RESOURCE_PATH)
+        g = os.listdir(self.resourcePath)
         for f in g:
-            m = os.path.join(RESOURCE_PATH, f)
+            m = os.path.join(self.resourcePath, f)
             if(os.path.isdir(m)):
                 self.screenList.append(f)
         print(self.screenList)
 
-    def Match(self, img, temp):
-        if self.sift:
+    def Match(self, img, temp, forceSift: bool = False):
+        if self.sift or forceSift:
             return sift.Smatch(img, temp)
         else:
             return tm.Tmatch(img, temp)
@@ -52,7 +49,7 @@ class arkNights():
             self.ss = self.d.screenshot()
             if self.ss != None:
                 break
-            time.sleep(1)
+            time.sleep(0.5)
 
     def checkAndStart(self):
         """
@@ -63,16 +60,16 @@ class arkNights():
                              "com.u8.sdk.U8UnityContext")
 
     # TODO 一个界面特征有多种可能，
-    def checkScreen(self, screen: str, shouldUpdate: bool = True) -> bool:
+    def checkScreen(self, screen: str, shouldUpdate: bool = True, forceSift: bool = False) -> bool:
         if shouldUpdate:
             self.updateScreen()
-        if not os.path.exists(RESOURCE_PATH+"/"+screen+"/feature"):
+        if not os.path.exists(self.resourcePath+"/"+screen+"/feature"):
             return False
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/feature")
+        g = os.walk(self.resourcePath+"/"+screen+"/feature")
         for root, _, files in g:
             for file in files:
                 feature_img = PIL.Image.open(os.path.join(root, file))
-                _, reliable = self.Match(self.ss, feature_img)
+                _, reliable = self.Match(self.ss, feature_img, forceSift)
                 if not reliable:
                     print(file+" mismatch")
                     return False
@@ -80,16 +77,16 @@ class arkNights():
                     return True
         return False
 
-    def actionFound(self, screen: str, element: str, interval: int = 1, shouldUpdate: bool = True) -> bool:
+    def actionFound(self, screen: str, element: str, interval: int = 1, shouldUpdate: bool = True, forceSift: bool = False) -> bool:
         if shouldUpdate:
             self.updateScreen()
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
+        g = os.walk(self.resourcePath+"/"+screen+"/action")
         result: bool
         for root, _, files in g:
             if element+".png" in files:
                 element_img = PIL.Image.open(
                     os.path.join(root, element+".png"))
-                _, reliable = self.Match(self.ss, element_img)
+                _, reliable = self.Match(self.ss, element_img, forceSift)
                 if not reliable:
                     print(element+" not found in screeShot")
                     result = False
@@ -102,16 +99,16 @@ class arkNights():
         time.sleep(interval)
         return result
 
-    def actionClick(self, screen: str, element: str, interval: int = 1, shouldUpdate: bool = True) -> bool:
+    def actionClick(self, screen: str, element: str, interval: int = 1, shouldUpdate: bool = True, forceSift: bool = False) -> bool:
         if shouldUpdate:
             self.updateScreen()
-        g = os.walk(RESOURCE_PATH+"/"+screen+"/action")
+        g = os.walk(self.resourcePath+"/"+screen+"/action")
         result: bool
         for root, _, files in g:
             if element+".png" in files:
                 element_img = PIL.Image.open(
                     os.path.join(root, element+".png"))
-                pos, reliable = self.Match(self.ss, element_img)
+                pos, reliable = self.Match(self.ss, element_img, forceSift)
                 if not reliable:
                     print(element+" not found in screeShot")
                     result = False
@@ -133,6 +130,31 @@ class arkNights():
         tx = txp*width
         ty = typ*height
         self.d.swipe(fx, fy, tx, ty)
+
+    def actionGetText(self, screen: str, element: str, shouldUpdate: bool = True, forceSift: bool = False) -> list:
+        if shouldUpdate:
+            self.updateScreen()
+        if not os.path.exists(self.resourcePath+"/"+screen+"/action"):
+            return None
+        g = os.walk(self.resourcePath+"/"+screen+"/action")
+        for root, _, files in g:
+            if element+".png" in files:
+                element_img = PIL.Image.open(
+                    os.path.join(root, element+".png"))
+                rect, reliable = self.Match(self.ss, element_img, forceSift)
+                if not reliable:
+                    print(element+" not found in screeShot")
+                    return None
+                else:
+                    element_cv2 = convert.PilImageToCvImage(element_img)
+                    ss_cv2 = convert.PilImageToCvImage(self.ss)
+                    fixSize = convert.CvImageSize(element_cv2)
+                    crop = convert.CvImageCrop(ss_cv2, rect, fixSize)
+                    res = ocr.ListWord(crop)
+                    return res
+            else:
+                return None
+        return None
 
     def detectCurrentScreen(self) -> str:
         self.updateScreen()
@@ -165,7 +187,7 @@ class arkNights():
             elif scr == "checkin":
                 self.actionClick("checkin", "close_button")
             elif scr == "DragonBoatFestival":
-                if not self.actionClick("DragonBoatFestival", "checkIn_button"):
+                if not self.actionClick("DragonBoatFestival", "checkIn_button", forceSift=True):
                     self.actionClick("DragonBoatFestival", "close_button")
 
             else:
@@ -191,19 +213,18 @@ class arkNights():
                     self.actionClick("fight", "agent_uncheck",
                                      shouldUpdate=False)
                     continue
-            elif self.actionFound("fight","start_final",shouldUpdate=False):
-                self.actionClick("fight","start_final",shouldUpdate=False)
+            elif self.actionFound("fight", "start_final", shouldUpdate=False):
+                self.actionClick("fight", "start_final", shouldUpdate=False)
                 continue
-            elif self.actionFound("fight","takeover",shouldUpdate=False):
+            elif self.actionFound("fight", "takeover", shouldUpdate=False):
                 print("fighting .... ")
                 time.sleep(5)
-            elif self.actionFound("fight","over",shouldUpdate=False):
+            elif self.actionFound("fight", "over", shouldUpdate=False):
                 print("fight over ,return")
-                self.actionClick("fight","over",shouldUpdate=False)
-                return True 
+                self.actionClick("fight", "over", shouldUpdate=False)
+                return True
             else:
-                errorCount+=1
-
+                errorCount += 1
 
     def gotoMission(self):
         while not self.checkScreen("mission"):
@@ -216,7 +237,7 @@ class arkNights():
     def clearMission(self):
         '''
         点完任务,每日，每周
-        好像没得做 不懂 再说
+        好像没得做 不懂 再说 
         '''
         # 起点都是主菜单
         self.gotoMission()
@@ -239,27 +260,59 @@ class arkNights():
             self.updateScreen()
         return
 
-    def gotoEpisode1(self):
-        while not self.checkScreen("episode1"):
+    def gotoEpisode(self, chapter: int):
+        while not self.checkScreen("episode", forceSift=True):
             self.gotoTerminal()
             while not self.actionFound("terminal", "main_theme_check"):
                 self.actionClick("terminal", "main_theme_uncheck")
             while not self.actionFound("terminal", "awaken_check"):
                 self.actionClick("terminal", "awaken_uncheck")
-            self.actionClick("terminal", "evil_time_2")
+            self.actionClick("terminal", "evil_time_2", forceSift=True)
+        while True:
+            current = self.checkCurrentEpisode()
+            if current is None:
+                raise RuntimeError("check chapter failed")
+            print("current", current)
+            if current == chapter:
+                return
+            elif current < chapter:
+                self.actionClick("episode", "backword")
+            elif current > chapter:
+                self.actionClick("episode", "forward")
         return
 
-    def gotoFight_1_7(self) -> bool:
-        self.gotoEpisode1()
+    def checkCurrentEpisode(self):
+        if not self.checkScreen("episode", shouldUpdate=True, forceSift=True):
+            return
+        list = self.actionGetText("episode", "current", forceSift=True)
+        if list is None:
+            return
+        chapter: int = None
+        for word in list:
+            try:
+                print(word)
+                # 根据经验做一些手动修改
+                word = word.replace("Oo", "00")
+                chapter = int(word)
+                break
+            except:
+                chapter = None
+                continue
+        return chapter
+
+    def gotoFight(self, chapter: int, fight: str, loop: int = 1) -> bool:
+        self.gotoEpisode(chapter)
 
         # 滑动搜索1-7
-        if not self.actionClick("episode1", "1-7"):
+        while not self.actionClick("episode", fight):
             self.d.swipe_ext("right")
             self.d.swipe_ext("right")
             self.d.swipe_ext("right")
-        while not self.actionClick("episode1", "1-7"):
-            self.actionSwipe(0.6, 0.5, 0.4, 0.5)
-            time.sleep(1.5)
+            while not self.actionClick("episode", fight):
+                self.actionSwipe(0.6, 0.5, 0.4, 0.5)
+                time.sleep(1.5)
 
-        if not self.startFight():
-            print("gotoFight_1_7 failed ...")
+        while(loop > 0):
+            loop -= 1
+            if not self.startFight():
+                print("gotoFight failed ...")

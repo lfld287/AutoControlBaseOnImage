@@ -25,6 +25,19 @@ def Tmatch(img, temp) -> tuple:
         raise RuntimeError(
             'Tmatch wrong input template , expect numpy.ndarry or PIL.Image.Image , get '+type(temp).__name__)
 
+
+    # 灰阶 
+    img_cv2 = cv2.cvtColor(img_cv2, cv2.COLOR_BGR2GRAY)
+    temp_cv2 = cv2.cvtColor(temp_cv2, cv2.COLOR_BGR2GRAY)
+
+    # #模糊
+    # img_cv2 = cv2.blur(img_cv2, ksize=(3, 3))
+    # temp_cv2 = cv2.blur(temp_cv2, ksize=(3, 3))
+
+    # #自适应二值化
+    # img_cv2=cv2.adaptiveThreshold(img_cv2,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,5,8)
+    # temp_cv2=cv2.adaptiveThreshold(temp_cv2,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,5,8)
+
     # TODO : find out the best match method
     method = cv2.TM_CCOEFF_NORMED
     resMatrix = cv2.matchTemplate(img_cv2, temp_cv2, method)
@@ -45,11 +58,11 @@ def Tmatch(img, temp) -> tuple:
     # print(right_bottom)
     test = cv2.rectangle(img_cv2, left_top, right_bottom, 255, 2)
     cv2.imwrite("catch.png", test)
-    
+    print("val",val)
 
     reliable: bool = False
 
-    if val < 0.85:
+    if val < 0.95:
         reliable = False
     else:
         reliable = True
